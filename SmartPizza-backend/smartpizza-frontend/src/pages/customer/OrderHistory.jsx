@@ -111,7 +111,7 @@ export const OrderHistory = () => {
                         <CreditCard size={14} /> Pay Now
                       </button>
                     )}
-                    {order.status === 'OUT_FOR_DELIVERY' && (
+                    {['CONFIRMED', 'PREPARING', 'OUT_FOR_DELIVERY'].includes(order.status) && (
                       <Link to={`/tracking/${order.id}`} className="btn btn-sm btn-outline-pizza d-flex align-items-center gap-1">
                         <Eye size={14} /> Track
                       </Link>

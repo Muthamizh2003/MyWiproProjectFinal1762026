@@ -211,6 +211,8 @@ public class DeliveryServiceImpl implements DeliveryService {
         dto.setLatitude(d.getLatitude());
         dto.setLongitude(d.getLongitude());
         dto.setAgentName(d.getAgent().getName());
+        dto.setCustomerLatitude(d.getOrder().getDeliveryAddress().getLatitude());
+        dto.setCustomerLongitude(d.getOrder().getDeliveryAddress().getLongitude());
         dto.setEta(
         	    mapsService.getETA(
         	        d.getLatitude(),

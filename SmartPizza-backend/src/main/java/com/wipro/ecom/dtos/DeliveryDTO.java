@@ -15,4 +15,7 @@ public class DeliveryDTO {
     private double longitude;
 
     private String agentName;
+
+    private double customerLatitude;
+    private double customerLongitude;
 }

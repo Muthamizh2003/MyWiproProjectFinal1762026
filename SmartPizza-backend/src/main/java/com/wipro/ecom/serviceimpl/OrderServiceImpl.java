@@ -18,9 +18,11 @@ import com.wipro.ecom.entities.OrderItem;
 import com.wipro.ecom.entities.Product;
 import com.wipro.ecom.entities.User;
 import com.wipro.ecom.enumpackage.DiscountType;
+import com.wipro.ecom.entities.Delivery;
 import com.wipro.ecom.repository.AddressRepository;
 import com.wipro.ecom.repository.CartItemRepository;
 import com.wipro.ecom.repository.CouponRepository;
+import com.wipro.ecom.repository.DeliveryRepository;
 import com.wipro.ecom.repository.OrderItemRepository;
 import com.wipro.ecom.repository.OrderRepository;
 import com.wipro.ecom.repository.ProductRepository;
@@ -41,13 +43,15 @@ public class OrderServiceImpl implements OrderService {
 	@Autowired
     private OrderItemRepository orderItemRepo;
 	@Autowired
+    private AddressRepository addressRepo;
+	@Autowired
     private CartItemRepository cartRepo;
+	@Autowired
+    private DeliveryRepository deliveryRepo;
 	@Autowired
     private ProductRepository productRepo;
 	@Autowired
     private UserRepository userRepo;
-	@Autowired
-    private AddressRepository addressRepo;
 	@Autowired
     private CouponRepository couponRepo;
 
@@ -235,6 +239,11 @@ public class OrderServiceImpl implements OrderService {
         }).toList();
 
         dto.setItems(itemDTOs);
+
+        deliveryRepo.findByOrderId(order.getId()).ifPresent(delivery -> {
+            dto.setDeliveryAgentName(delivery.getAgent().getName());
+            dto.setDeliveryStatus(delivery.getStatus());
+        });
 
         return dto;
     }
