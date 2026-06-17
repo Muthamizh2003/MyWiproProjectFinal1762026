@@ -32,7 +32,7 @@ public class RazorpayService {
         options.put("receipt", "txn_" + System.currentTimeMillis());
 
         Order order = client.orders.create(options);
-        log.info("Razorpay order created: {}", order.get("id"));
+        log.info("Razorpay order created: {}", String.valueOf(order.get("id")));
         return order;
     }
 }
