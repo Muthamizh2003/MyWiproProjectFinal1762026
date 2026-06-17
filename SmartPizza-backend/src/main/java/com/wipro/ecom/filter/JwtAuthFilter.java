@@ -12,6 +12,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.wipro.ecom.securityservices.UserDetailsServiceImp;
 import com.wipro.ecom.services.JwtService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -21,6 +23,7 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
+	private static final Logger log = LoggerFactory.getLogger(JwtAuthFilter.class);
 	
 	@Autowired
 	JwtService jwtService;
@@ -41,7 +44,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             try {
                 username = jwtService.extractUsername(token);
             } catch (Exception e) {
-                // Invalid or expired token — proceed without authentication
+                log.warn("Invalid or expired token: {}", e.getMessage());
             }
         }
 
@@ -53,6 +56,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+                log.debug("Authenticated user: {}", username);
             }
         }
         filterChain.doFilter(request, response);

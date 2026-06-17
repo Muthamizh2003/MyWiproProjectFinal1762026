@@ -16,8 +16,12 @@ import com.wipro.ecom.external.AzureAIService;
 import com.wipro.ecom.repository.OrderRepository;
 import com.wipro.ecom.repository.ProductRepository;
 import com.wipro.ecom.services.AIRecommendationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 @Service
 public class AIRecommendationServiceImpl implements AIRecommendationService {
+
+    private static final Logger log = LoggerFactory.getLogger(AIRecommendationServiceImpl.class);
 
     @Autowired
     private AzureAIService azureService;
@@ -30,11 +34,13 @@ public class AIRecommendationServiceImpl implements AIRecommendationService {
 
     @Override
     public List<RecommendationDTO> getRecommendations(AIRequestDTO request) {
+        log.info("Fetching AI recommendations for userId: {}, prompt: {}", request.getUserId(), request.getPrompt());
 
         String prompt = request.getPrompt();
 
         if (prompt == null || prompt.isEmpty()) {
             prompt = "Suggest 3 pizza combos";
+            log.debug("Using default prompt for recommendations");
         }
 
         // SEASON
@@ -88,15 +94,18 @@ public class AIRecommendationServiceImpl implements AIRecommendationService {
         String aiResponse = azureService.getAIResponse(prompt);
 
         if (aiResponse == null || aiResponse.isBlank()) {
+            log.warn("AI response was empty, using fallback recommendations");
             return getFallbackCombosWithFilters(request);
         }
 
         List<RecommendationDTO> recommendations = parseAIResponse(aiResponse, allProducts);
 
         if (recommendations.isEmpty()) {
+            log.warn("Failed to parse AI response, using fallback recommendations");
             return getFallbackCombosWithFilters(request);
         }
 
+        log.info("Returning {} AI recommendations", recommendations.size());
         return recommendations;
     }
 

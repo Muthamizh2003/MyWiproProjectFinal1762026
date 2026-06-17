@@ -17,9 +17,13 @@ import com.wipro.ecom.repository.PaymentRepository;
 import com.wipro.ecom.services.DeliveryService;
 import com.wipro.ecom.services.PaymentService;
 import com.wipro.ecom.services.RazorpayService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class PaymentServiceImpl implements PaymentService {
+
+	private static final Logger log = LoggerFactory.getLogger(PaymentServiceImpl.class);
 
 	@Autowired
     private PaymentRepository paymentRepo;
@@ -30,11 +34,13 @@ public class PaymentServiceImpl implements PaymentService {
     //PROCESS PAYMENT
     @Override
     public PaymentDTO processPayment(PaymentDTO dto) {
+        log.info("Processing payment for order: {}", dto.getOrderId());
 
     	Order order = orderRepo.findById(dto.getOrderId())
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 		
     	if (paymentRepo.findByOrderId(dto.getOrderId()).isPresent()) {
+    	    log.warn("Payment already completed for order: {}", dto.getOrderId());
     	    throw new RuntimeException("Payment already completed");
     	}
 
@@ -53,14 +59,18 @@ public class PaymentServiceImpl implements PaymentService {
         orderRepo.save(order);
 
         // ✅ Auto-start delivery
-        try { deliveryService.startDelivery(dto.getOrderId()); } catch (Exception e) {}
+        try { deliveryService.startDelivery(dto.getOrderId()); } catch (Exception e) {
+            log.error("Failed to auto-start delivery for order: {}", dto.getOrderId(), e);
+        }
 
+        log.info("Payment processed successfully for order: {}", dto.getOrderId());
         return mapToDTO(payment);
     }
 
     //GET PAYMENT BY ORDER
     @Override
     public PaymentDTO getPaymentByOrder(Long orderId) {
+        log.info("Fetching payment for order: {}", orderId);
 
         Payment payment = paymentRepo.findByOrderId(orderId)
                 .orElseThrow(() -> new RuntimeException("Payment not found"));
@@ -71,6 +81,7 @@ public class PaymentServiceImpl implements PaymentService {
     // GENERATE INVOICE 
     @Override
     public String generateInvoice(Long orderId) {
+        log.info("Generating invoice for order: {}", orderId);
 
         Order order = orderRepo.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
@@ -124,8 +135,10 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public Map<String, Object> createPaymentOrder(Long orderId) {
+        log.info("Creating Razorpay payment order for order: {}", orderId);
     	
     	if (paymentRepo.findByOrderId(orderId).isPresent()) {
+    	    log.warn("Payment already completed for order: {}", orderId);
     	    throw new RuntimeException("Payment already completed");
     	}
     	
@@ -143,9 +156,11 @@ public class PaymentServiceImpl implements PaymentService {
             response.put("displayAmount", order.getTotalAmount()); 
             response.put("currency", "INR");
 
+            log.info("Razorpay order created for order: {}", orderId);
             return response;
 
         } catch (Exception e) {
+            log.error("Failed to initiate payment for order: {}", orderId, e);
             throw new RuntimeException("Payment initiation failed");
         }
     }
@@ -153,8 +168,10 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public PaymentDTO confirmPayment(Long orderId, String paymentId) {
+        log.info("Confirming payment for order: {}, paymentId: {}", orderId, paymentId);
     	
     	if (paymentRepo.findByOrderId(orderId).isPresent()) {
+    	    log.warn("Payment already confirmed for order: {}", orderId);
     	    throw new RuntimeException("Payment already confirmed");
     	}
 
@@ -173,8 +190,11 @@ public class PaymentServiceImpl implements PaymentService {
         order.setStatus("CONFIRMED");
         orderRepo.save(order);
 
-        try { deliveryService.startDelivery(orderId); } catch (Exception e) {}
+        try { deliveryService.startDelivery(orderId); } catch (Exception e) {
+            log.error("Failed to auto-start delivery for order: {}", orderId, e);
+        }
 
+        log.info("Payment confirmed successfully for order: {}", orderId);
         return mapToDTO(payment);
     }
 }

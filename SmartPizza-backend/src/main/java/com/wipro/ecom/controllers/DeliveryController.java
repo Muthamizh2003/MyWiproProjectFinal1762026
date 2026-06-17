@@ -15,11 +15,15 @@ import com.wipro.ecom.services.DeliveryService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/delivery")
 @RequiredArgsConstructor
 public class DeliveryController {
+
+    private static final Logger log = LoggerFactory.getLogger(DeliveryController.class);
 
     private final DeliveryService deliveryService;
     private final DeliveryAgentRepository agentRepo;
@@ -27,18 +31,21 @@ public class DeliveryController {
     //START DELIVERY(Assign agent + start tracking)
     @PostMapping("/start/{orderId}")
     public DeliveryDTO startDelivery(@PathVariable Long orderId) {
+        log.info("Starting delivery for order: {}", orderId);
         return deliveryService.startDelivery(orderId);
     }
 
     //TRACK DELIVERY(Live simulation)
     @GetMapping("/track/{orderId}")
     public DeliveryDTO trackDelivery(@PathVariable Long orderId) {
+        log.info("Tracking delivery for order: {}", orderId);
         return deliveryService.trackDelivery(orderId);
     }
 
     //GET ETA (Estimated time)
     @GetMapping("/eta/{orderId}")
     public double getETA(@PathVariable Long orderId) {
+        log.info("Calculating ETA for order: {}", orderId);
         return deliveryService.calculateETA(orderId);
     }
 
@@ -47,18 +54,21 @@ public class DeliveryController {
     @GetMapping("/agent/orders")
     public List<DeliveryDTO> getMyOrders(Authentication auth) {
         DeliveryAgent agent = getAgent(auth);
+        log.info("Fetching orders for agent: {}", agent.getId());
         return deliveryService.getAgentOrders(agent.getId());
     }
 
     @PutMapping("/agent/status")
     public DeliveryDTO updateStatus(@Valid @RequestBody DeliveryStatusRequest req, Authentication auth) {
         getAgent(auth);
+        log.info("Updating delivery status: {} to {}", req.getDeliveryId(), req.getStatus());
         return deliveryService.updateDeliveryStatus(req.getDeliveryId(), req.getStatus());
     }
 
     @PutMapping("/agent/location")
     public DeliveryDTO updateLocation(@Valid @RequestBody DeliveryLocationRequest req, Authentication auth) {
         getAgent(auth);
+        log.info("Updating location for delivery: {}", req.getDeliveryId());
         return deliveryService.updateAgentLocation(req.getDeliveryId(), req.getLatitude(), req.getLongitude());
     }
 

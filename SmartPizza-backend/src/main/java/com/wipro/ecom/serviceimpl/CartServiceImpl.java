@@ -14,11 +14,15 @@ import com.wipro.ecom.repository.CartItemRepository;
 import com.wipro.ecom.repository.ProductRepository;
 import com.wipro.ecom.repository.UserRepository;
 import com.wipro.ecom.services.CartService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CartServiceImpl implements CartService {
+
+	private static final Logger log = LoggerFactory.getLogger(CartServiceImpl.class);
 
 	@Autowired
     private CartItemRepository cartRepo;
@@ -32,6 +36,7 @@ public class CartServiceImpl implements CartService {
     //ADD TO CART
     @Override
     public void addToCart(Long userId, Long productId, int quantity) {
+        log.info("Adding product {} to cart for user {}, quantity: {}", productId, userId, quantity);
 
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -58,6 +63,7 @@ public class CartServiceImpl implements CartService {
     //GET CART
     @Override
     public List<CartItemDTO> getCart(Long userId) {
+        log.info("Fetching cart for user: {}", userId);
 
         List<CartItem> items = cartRepo.findByUserId(userId);
 
@@ -83,6 +89,7 @@ public class CartServiceImpl implements CartService {
     //UPDATE QUANTITY
     @Override
     public void updateQuantity(Long userId, Long productId, int quantity) {
+        log.info("Updating quantity for user {}, product {} to {}", userId, productId, quantity);
 
         CartItem item = cartRepo
                 .findByUser_IdAndProduct_Id(userId, productId)
@@ -90,6 +97,7 @@ public class CartServiceImpl implements CartService {
 
         if (quantity <= 0) {
             cartRepo.delete(item);
+            log.info("Item removed from cart due to quantity <= 0");
         } else {
             item.setQuantity(quantity);
             cartRepo.save(item);
@@ -99,6 +107,7 @@ public class CartServiceImpl implements CartService {
     //REMOVE ITEM
     @Override
     public void removeItem(Long userId, Long productId) {
+        log.info("Removing product {} from cart for user {}", productId, userId);
 
         CartItem item = cartRepo
                 .findByUser_IdAndProduct_Id(userId, productId)
@@ -111,6 +120,7 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     public void clearCart(Long userId) {
+        log.info("Clearing cart for user: {}", userId);
         cartRepo.deleteByUserId(userId);
     }
 }

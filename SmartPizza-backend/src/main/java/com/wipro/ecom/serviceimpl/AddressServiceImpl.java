@@ -13,10 +13,14 @@ import com.wipro.ecom.external.AzureMapsService;
 import com.wipro.ecom.repository.AddressRepository;
 import com.wipro.ecom.repository.UserRepository;
 import com.wipro.ecom.services.AddressService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 @Service
 public class AddressServiceImpl implements AddressService {
+
+	private static final Logger log = LoggerFactory.getLogger(AddressServiceImpl.class);
 
 	@Autowired
     private AddressRepository addressRepo;
@@ -30,6 +34,7 @@ public class AddressServiceImpl implements AddressService {
     //ADD ADDRESS
     @Override
     public AddressDTO addAddress(Long userId, AddressDTO dto) {
+        log.info("Adding address for user: {}", userId);
     	
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -38,6 +43,7 @@ public class AddressServiceImpl implements AddressService {
         boolean isAdmin = isCurrentUserAdmin();
 
         if (!currentUserId.equals(userId) && !isAdmin) {
+            log.warn("Access denied for user {} trying to add address for user {}", currentUserId, userId);
         	throw new RuntimeException("Access denied");
         }
 
@@ -65,10 +71,12 @@ public class AddressServiceImpl implements AddressService {
     //GET ALL ADDRESSES FOR USER
     @Override
     public List<AddressDTO> getUserAddresses(Long userId) {
+        log.info("Fetching addresses for user: {}", userId);
     	Long currentUserId = getLoggedInUserId();
         boolean isAdmin = isCurrentUserAdmin();
 
         if (!currentUserId.equals(userId) && !isAdmin) {
+            log.warn("Access denied for user {} trying to get addresses for user {}", currentUserId, userId);
         	throw new RuntimeException("Access denied");
         }
         return addressRepo.findByUserId(userId)
@@ -80,6 +88,7 @@ public class AddressServiceImpl implements AddressService {
     //GET ADDRESS BY ID
     @Override
     public AddressDTO getAddressById(Long id) {
+        log.info("Fetching address by id: {}", id);
 
     	Address address = addressRepo.findById(id)
             .orElseThrow(() -> new RuntimeException("Address not found"));
@@ -90,6 +99,7 @@ public class AddressServiceImpl implements AddressService {
 	    Long ownerId = address.getUser().getId(); 
 	
 	    if (!currentUserId.equals(ownerId) && !isAdmin) {
+	        log.warn("Access denied for user {} trying to access address {}", currentUserId, id);
 	        throw new RuntimeException("Access denied");
 	    }
 
@@ -100,6 +110,7 @@ public class AddressServiceImpl implements AddressService {
     //UPDATE ADDRESS
     @Override
     public AddressDTO updateAddress(Long id, AddressDTO dto) {
+        log.info("Updating address: {}", id);
 
     	Long currentUserId = getLoggedInUserId();
 	    boolean isAdmin = isCurrentUserAdmin();
@@ -110,6 +121,7 @@ public class AddressServiceImpl implements AddressService {
         Long ownerId = address.getUser().getId();
 
 	    if (!currentUserId.equals(ownerId) && !isAdmin) {
+	        log.warn("Access denied for user {} trying to update address {}", currentUserId, id);
 	        throw new RuntimeException("Access denied");
 	    }
 
@@ -132,6 +144,7 @@ public class AddressServiceImpl implements AddressService {
     //DELETE ADDRESS
     @Override
     public void deleteAddress(Long id) {
+        log.info("Deleting address: {}", id);
     	
     	Long currentUserId = getLoggedInUserId();
 	    boolean isAdmin = isCurrentUserAdmin();
@@ -142,6 +155,7 @@ public class AddressServiceImpl implements AddressService {
 	    Long ownerId = address.getUser().getId(); 
 	
 	    if (!currentUserId.equals(ownerId) && !isAdmin) {
+	        log.warn("Access denied for user {} trying to delete address {}", currentUserId, id);
 	        throw new RuntimeException("Access denied");
 	    }
 

@@ -14,10 +14,14 @@ import com.wipro.ecom.entities.Product;
 import com.wipro.ecom.external.AzureAIService;
 import com.wipro.ecom.repository.ProductRepository;
 import com.wipro.ecom.services.ComboService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 @Service
 public class ComboServiceImpl implements ComboService {
+
+	private static final Logger log = LoggerFactory.getLogger(ComboServiceImpl.class);
 
 	@Autowired
     private ProductRepository productRepo;
@@ -27,12 +31,14 @@ public class ComboServiceImpl implements ComboService {
 
     @Override
     public List<ComboDTO> getSmartCombos(ComboRequestDTO request) {
+        log.info("Generating smart combos with prompt: {}", request.getPrompt());
 
         String prompt = request.getPrompt();
 
         if (prompt == null || prompt.isEmpty()) {
             prompt = "Suggest 3 pizza combos under 500";
             prompt += " using rich product descriptions";
+            log.debug("Using default prompt for combo generation");
         }
         
 
@@ -54,6 +60,7 @@ public class ComboServiceImpl implements ComboService {
 
         //Safety check
         if (aiResponse == null || aiResponse.isBlank()) {
+            log.warn("AI response was empty, using fallback combos");
             return getFallbackCombos();
         }
 
@@ -61,9 +68,11 @@ public class ComboServiceImpl implements ComboService {
 
         //fallback if AI fails
         if (combos.isEmpty()) {
+            log.warn("Failed to parse AI response, using fallback combos");
             return getFallbackCombos();
         }
 
+        log.info("Generated {} smart combos", combos.size());
         return combos;
     }
     

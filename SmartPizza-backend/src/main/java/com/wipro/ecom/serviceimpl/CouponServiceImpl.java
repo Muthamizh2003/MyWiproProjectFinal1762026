@@ -12,26 +12,33 @@ import com.wipro.ecom.entities.Coupon;
 import com.wipro.ecom.enumpackage.DiscountType;
 import com.wipro.ecom.repository.CouponRepository;
 import com.wipro.ecom.services.CouponService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 @Service
 public class CouponServiceImpl implements CouponService {
+
+    private static final Logger log = LoggerFactory.getLogger(CouponServiceImpl.class);
 
     @Autowired
     private CouponRepository couponRepo;
 
     @Override
     public CouponResponseDTO applyCoupon(String code, double orderAmount) {
+        log.info("Applying coupon: {} on amount: {}", code, orderAmount);
 
         Coupon coupon = couponRepo.findByCode(code)
                 .orElseThrow(() -> new RuntimeException("Invalid Coupon"));
 
         if (coupon.getExpiryDate() != null &&
                 coupon.getExpiryDate().isBefore(LocalDateTime.now())) {
+            log.warn("Coupon {} has expired", code);
             throw new RuntimeException("Coupon expired");
         }
 
         if (orderAmount < coupon.getMinOrderAmount()) {
+            log.warn("Minimum order amount not met for coupon {}", code);
             throw new RuntimeException(
                 "Minimum order amount should be " + coupon.getMinOrderAmount()
             );
@@ -55,16 +62,19 @@ public class CouponServiceImpl implements CouponService {
         response.setFinalAmount(finalAmount);
         response.setMessage("Coupon applied successfully");
 
+        log.info("Coupon {} applied: discount={}, final={}", code, discountAmount, finalAmount);
         return response;
     }
 
     @Override
     public List<CouponDTO> getAllCoupons() {
+        log.info("Fetching all coupons");
         return couponRepo.findAll().stream().map(this::toDTO).toList();
     }
 
     @Override
     public CouponDTO getCouponById(Long id) {
+        log.info("Fetching coupon by id: {}", id);
         Coupon coupon = couponRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Coupon not found"));
         return toDTO(coupon);
@@ -72,16 +82,20 @@ public class CouponServiceImpl implements CouponService {
 
     @Override
     public CouponDTO createCoupon(CouponDTO dto) {
+        log.info("Creating coupon: {}", dto.getCode());
         if (couponRepo.findByCode(dto.getCode()).isPresent()) {
+            log.warn("Coupon code already exists: {}", dto.getCode());
             throw new RuntimeException("Coupon code already exists");
         }
         Coupon coupon = toEntity(dto);
         coupon = couponRepo.save(coupon);
+        log.info("Coupon created: {}", dto.getCode());
         return toDTO(coupon);
     }
 
     @Override
     public CouponDTO updateCoupon(Long id, CouponDTO dto) {
+        log.info("Updating coupon: {}", id);
         Coupon coupon = couponRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Coupon not found"));
         coupon.setCode(dto.getCode());
@@ -90,11 +104,13 @@ public class CouponServiceImpl implements CouponService {
         coupon.setMinOrderAmount(dto.getMinOrderAmount());
         coupon.setExpiryDate(dto.getExpiryDate());
         coupon = couponRepo.save(coupon);
+        log.info("Coupon updated: {}", id);
         return toDTO(coupon);
     }
 
     @Override
     public void deleteCoupon(Long id) {
+        log.info("Deleting coupon: {}", id);
         if (!couponRepo.existsById(id)) {
             throw new RuntimeException("Coupon not found");
         }

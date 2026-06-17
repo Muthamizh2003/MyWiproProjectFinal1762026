@@ -15,9 +15,13 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class JwtService {
+
+	private static final Logger log = LoggerFactory.getLogger(JwtService.class);
 
 	public static final String SECRET = "5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437";
 
@@ -42,12 +46,15 @@ public class JwtService {
 	}
 
 	public String generateToken(String username, String role, Long userId) {
+		log.info("Generating token for user: {} with role: {}", username, role);
 
 		Map<String, Object> claims = new HashMap<>();
 		claims.put("roles", List.of(role));
 		claims.put("userId", userId);
-		return createToken(claims, username);
+		String token = createToken(claims, username);
 
+		log.debug("Token generated for user: {}", username);
+		return token;
 	}
 
 	
@@ -84,6 +91,10 @@ public class JwtService {
 
 	    public Boolean validateToken(String token, UserDetails userDetails) {
 	        final String username = extractUsername(token);
-	        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+	        boolean valid = username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+	        if (!valid) {
+	            log.warn("Token validation failed for user: {}", username);
+	        }
+	        return valid;
 	    } 
 }

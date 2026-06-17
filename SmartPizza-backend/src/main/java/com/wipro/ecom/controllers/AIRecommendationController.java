@@ -11,10 +11,14 @@ import com.wipro.ecom.dtos.RecommendationDTO;
 import com.wipro.ecom.services.AIRecommendationService;
 
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/ai")
 public class AIRecommendationController {
+
+    private static final Logger log = LoggerFactory.getLogger(AIRecommendationController.class);
 
 	@Autowired
     private AIRecommendationService aiService;
@@ -24,6 +28,7 @@ public class AIRecommendationController {
     public List<RecommendationDTO> getRecommendations(
             @Valid @RequestBody AIRequestDTO request) {
 
+        log.info("Fetching AI recommendations for prompt: {}", request.getPrompt());
         return aiService.getRecommendations(request);
     }
 }

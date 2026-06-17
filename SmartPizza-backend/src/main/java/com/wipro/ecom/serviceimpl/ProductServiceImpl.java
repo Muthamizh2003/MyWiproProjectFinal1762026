@@ -11,9 +11,13 @@ import com.wipro.ecom.entities.Product;
 import com.wipro.ecom.repository.CategoryRepository;
 import com.wipro.ecom.repository.ProductRepository;
 import com.wipro.ecom.services.ProductService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class ProductServiceImpl implements ProductService {
+
+	private static final Logger log = LoggerFactory.getLogger(ProductServiceImpl.class);
 
 	@Autowired
     private ProductRepository productRepo;
@@ -24,6 +28,7 @@ public class ProductServiceImpl implements ProductService {
     //ADD PRODUCT(ADMIN)
     @Override
     public ProductDTO addProduct(ProductDTO dto) {
+        log.info("Adding product: {}", dto.getName());
 
         Product product = new Product();
         product.setName(dto.getName());
@@ -34,13 +39,14 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new RuntimeException("Category not found"));
         product.setCategory(category);
         Product saved = productRepo.save(product);
+        log.info("Product added: {} with id: {}", saved.getName(), saved.getId());
         return mapToDTO(saved);
     }
 
     //GET ALL PRODUCTS
     @Override
     public List<ProductDTO> getAllProducts() {
-
+        log.info("Fetching all products");
         return productRepo.findAll()
                 .stream()
                 .map(this::mapToDTO)
@@ -50,7 +56,7 @@ public class ProductServiceImpl implements ProductService {
     //GET PRODUCT BY ID
     @Override
     public ProductDTO getProductById(Long id) {
-
+        log.info("Fetching product by id: {}", id);
         Product product = productRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
@@ -60,7 +66,7 @@ public class ProductServiceImpl implements ProductService {
     //GET BY CATEGORY
     @Override
     public List<ProductDTO> getByCategory(String categoryName) {
-
+        log.info("Fetching products by category: {}", categoryName);
         return productRepo.findByCategory_Name(categoryName)
                 .stream()
                 .map(this::mapToDTO)
@@ -70,6 +76,7 @@ public class ProductServiceImpl implements ProductService {
     //UPDATE PRODUCT
     @Override
     public ProductDTO updateProduct(Long id, ProductDTO dto) {
+        log.info("Updating product: {}", id);
 
         Product product = productRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
@@ -90,12 +97,14 @@ public class ProductServiceImpl implements ProductService {
     //DELETE PRODUCT
     @Override
     public void deleteProduct(Long id) {
+        log.info("Deleting product: {}", id);
 
         if (!productRepo.existsById(id)) {
             throw new RuntimeException("Product not found");
         }
 
         productRepo.deleteById(id);
+        log.info("Product deleted: {}", id);
     }
 
     //MAPPER METHOD

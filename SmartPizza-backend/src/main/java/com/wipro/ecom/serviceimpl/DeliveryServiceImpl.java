@@ -16,10 +16,14 @@ import com.wipro.ecom.repository.DeliveryAgentRepository;
 import com.wipro.ecom.repository.DeliveryRepository;
 import com.wipro.ecom.repository.OrderRepository;
 import com.wipro.ecom.services.DeliveryService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 @Service
 public class DeliveryServiceImpl implements DeliveryService {
+
+	private static final Logger log = LoggerFactory.getLogger(DeliveryServiceImpl.class);
 
 	@Autowired
     private DeliveryRepository deliveryRepo;
@@ -37,8 +41,10 @@ public class DeliveryServiceImpl implements DeliveryService {
     //START DELIVERY
     @Override
     public DeliveryDTO startDelivery(Long orderId) {
+        log.info("Starting delivery for order: {}", orderId);
 
 		if (deliveryRepo.findByOrderId(orderId).isPresent()) {
+		    log.warn("Delivery already started for order: {}", orderId);
 		    throw new RuntimeException("Delivery already started");
 		}
 
@@ -51,6 +57,7 @@ public class DeliveryServiceImpl implements DeliveryService {
 	
 	     //CHECK EMPTY
 	     if (agents.isEmpty()) {
+	         log.warn("No delivery agents available for order: {}", orderId);
 	         throw new RuntimeException("No agent available");
 	     }
 	
@@ -74,12 +81,14 @@ public class DeliveryServiceImpl implements DeliveryService {
 
         delivery = deliveryRepo.save(delivery);
 
+        log.info("Delivery started for order: {} with agent: {}", orderId, agent.getName());
         return mapToDTO(delivery);
     }
 
     //LIVE TRACKING (SIMULATION)
     @Override
     public DeliveryDTO trackDelivery(Long orderId) {
+        log.info("Tracking delivery for order: {}", orderId);
 
         Delivery delivery = deliveryRepo.findByOrderId(orderId)
                 .orElseThrow(() -> new RuntimeException("Delivery not found"));
@@ -110,6 +119,7 @@ public class DeliveryServiceImpl implements DeliveryService {
         	    agent.setAvailable(true);
         	    agentRepo.save(agent);
 
+        	    log.info("Delivery completed for order: {}", orderId);
         	}
 
         delivery = deliveryRepo.save(delivery);
@@ -120,6 +130,7 @@ public class DeliveryServiceImpl implements DeliveryService {
     //ETA CALCULATION
     @Override
     public double calculateETA(Long orderId) {
+        log.info("Calculating ETA for order: {}", orderId);
 
         Delivery delivery = deliveryRepo.findByOrderId(orderId)
                 .orElseThrow(() -> new RuntimeException("Delivery not found"));
@@ -138,6 +149,7 @@ public class DeliveryServiceImpl implements DeliveryService {
     //GET ALL DELIVERIES FOR AN AGENT
     @Override
     public List<DeliveryDTO> getAgentOrders(Long agentId) {
+        log.info("Fetching orders for agent: {}", agentId);
         return deliveryRepo.findByAgentId(agentId).stream()
                 .map(this::mapToDTO)
                 .toList();
@@ -146,6 +158,7 @@ public class DeliveryServiceImpl implements DeliveryService {
     //UPDATE DELIVERY STATUS
     @Override
     public DeliveryDTO updateDeliveryStatus(Long deliveryId, String status) {
+        log.info("Updating delivery {} status to: {}", deliveryId, status);
         Delivery delivery = deliveryRepo.findById(deliveryId)
                 .orElseThrow(() -> new RuntimeException("Delivery not found"));
 
@@ -159,6 +172,7 @@ public class DeliveryServiceImpl implements DeliveryService {
             DeliveryAgent agent = delivery.getAgent();
             agent.setAvailable(true);
             agentRepo.save(agent);
+            log.info("Delivery {} marked as DELIVERED", deliveryId);
         }
 
         delivery = deliveryRepo.save(delivery);
@@ -168,6 +182,7 @@ public class DeliveryServiceImpl implements DeliveryService {
     //UPDATE AGENT GPS LOCATION
     @Override
     public DeliveryDTO updateAgentLocation(Long deliveryId, double latitude, double longitude) {
+        log.debug("Updating agent location for delivery: {} to ({}, {})", deliveryId, latitude, longitude);
         Delivery delivery = deliveryRepo.findById(deliveryId)
                 .orElseThrow(() -> new RuntimeException("Delivery not found"));
 

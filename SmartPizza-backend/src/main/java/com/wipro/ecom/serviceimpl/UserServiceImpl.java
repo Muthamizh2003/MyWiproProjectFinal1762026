@@ -15,10 +15,14 @@ import com.wipro.ecom.entities.User;
 import com.wipro.ecom.repository.RoleRepository;
 import com.wipro.ecom.repository.UserRepository;
 import com.wipro.ecom.services.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 @Service
 public class UserServiceImpl implements UserService {
+
+	private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
 
 	@Autowired
     private UserRepository userRepo;
@@ -32,8 +36,10 @@ public class UserServiceImpl implements UserService {
     //REGISTER USER
     @Override
     public UserDTO register(UserDTO dto) {
+        log.info("Registering user with email: {}", dto.getEmail());
 
         if (userRepo.findByEmail(dto.getEmail()).isPresent()) {
+            log.warn("Registration failed - email already exists: {}", dto.getEmail());
             throw new RuntimeException("Email already exists");
         }
 
@@ -51,6 +57,7 @@ public class UserServiceImpl implements UserService {
         
         User saved = userRepo.save(user);
 
+        log.info("User registered successfully: {}", saved.getEmail());
         return mapToDTO(saved);
     }
 
@@ -62,19 +69,21 @@ public class UserServiceImpl implements UserService {
     	boolean isAdmin = isCurrentUserAdmin(); 
 
     	if (!currentUserId.equals(id) && !isAdmin) {
+    		log.warn("Access denied for user {} trying to access user {}", currentUserId, id);
     		throw new RuntimeException("Access denied");
     	}
 
         User user = userRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        log.info("Retrieved user: {}", id);
         return mapToDTO(user);
     }
 
     //GET ALL USERS
     @Override
     public List<UserDTO> getAllUsers() {
-
+        log.info("Fetching all users");
         return userRepo.findAll()
                 .stream()
                 .map(this::mapToDTO)
@@ -89,6 +98,7 @@ public class UserServiceImpl implements UserService {
     	boolean isAdmin = isCurrentUserAdmin();
 
     	if (!currentUserId.equals(id) && !isAdmin) {
+    		log.warn("Access denied for user {} trying to update user {}", currentUserId, id);
     		throw new RuntimeException("Access denied");
     	}
 
@@ -108,6 +118,7 @@ public class UserServiceImpl implements UserService {
 
         User updated = userRepo.save(user);
 
+        log.info("User updated: {}", id);
         return mapToDTO(updated);
     }
 
@@ -119,6 +130,7 @@ public class UserServiceImpl implements UserService {
     	boolean isAdmin = isCurrentUserAdmin();
     	
     	if (!currentUserId.equals(id) && !isAdmin) {
+    	    log.warn("Access denied for user {} trying to delete user {}", currentUserId, id);
     	    throw new RuntimeException("Access denied");
     	}
 
@@ -127,6 +139,7 @@ public class UserServiceImpl implements UserService {
         }
 
         userRepo.deleteById(id);
+        log.info("User deleted: {}", id);
     }
 
     //MAPPER METHOD

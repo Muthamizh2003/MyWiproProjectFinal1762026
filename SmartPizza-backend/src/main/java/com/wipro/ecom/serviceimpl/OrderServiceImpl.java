@@ -26,11 +26,15 @@ import com.wipro.ecom.repository.OrderRepository;
 import com.wipro.ecom.repository.ProductRepository;
 import com.wipro.ecom.repository.UserRepository;
 import com.wipro.ecom.services.OrderService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import jakarta.transaction.Transactional;
 
 @Service
 public class OrderServiceImpl implements OrderService {
+
+	private static final Logger log = LoggerFactory.getLogger(OrderServiceImpl.class);
 
 	@Autowired
     private OrderRepository orderRepo;
@@ -51,6 +55,7 @@ public class OrderServiceImpl implements OrderService {
     //PLACE ORDER 
     @Override
     public OrderDTO placeOrder(Long userId, Long addressId, String couponCode) {
+        log.info("Placing order for user: {}, address: {}, coupon: {}", userId, addressId, couponCode);
 
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -146,13 +151,14 @@ public class OrderServiceImpl implements OrderService {
         cartRepo.deleteByUserId(userId);
 
         //Return DTO
+        log.info("Order placed successfully: {} for user: {}", order.getId(), userId);
         return mapToDTO(order, orderItems);
     }
 
     //GET USER ORDERS
     @Override
     public List<OrderDTO> getUserOrders(Long userId) {
-
+        log.info("Fetching orders for user: {}", userId);
         return orderRepo.findByUserId(userId)
                 .stream()
                 .map(o -> mapToDTO(o, o.getItems()))
@@ -162,7 +168,7 @@ public class OrderServiceImpl implements OrderService {
     //NAMED QUERY
     @Override
     public List<OrderDTO> getOrdersByStatus(String status) {
-
+        log.info("Fetching orders by status: {}", status);
         return orderRepo.getOrdersByStatus(status)
                 .stream()
                 .map(o -> mapToDTO(o, o.getItems()))
@@ -172,7 +178,7 @@ public class OrderServiceImpl implements OrderService {
     //HQL
     @Override
     public List<OrderDTO> getHighValueOrders(double amount) {
-
+        log.info("Fetching high value orders above: {}", amount);
         return orderRepo.findHighValueOrders(amount)
                 .stream()
                 .map(o -> mapToDTO(o, o.getItems()))
@@ -182,7 +188,7 @@ public class OrderServiceImpl implements OrderService {
     //NATIVE
     @Override
     public List<OrderDTO> getTopOrders() {
-
+        log.info("Fetching top orders");
         return orderRepo.getTopOrders()
                 .stream()
                 .map(o -> mapToDTO(o, o.getItems()))
@@ -235,6 +241,7 @@ public class OrderServiceImpl implements OrderService {
     
     @Override
     public void cancelOrder(Long orderId) {
+        log.info("Cancelling order: {}", orderId);
 
         Order order = orderRepo.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
@@ -243,12 +250,14 @@ public class OrderServiceImpl implements OrderService {
         if (!order.getStatus().equalsIgnoreCase("PENDING_PAYMENT") &&
         	!order.getStatus().equalsIgnoreCase("CONFIRMED")) {
 
+        	log.warn("Order {} cannot be cancelled at current status: {}", orderId, order.getStatus());
         	 throw new RuntimeException("Order cannot be cancelled at this stage");
         }
 
         order.setStatus("CANCELLED");
 
         orderRepo.save(order);
+        log.info("Order cancelled: {}", orderId);
     }
 
 }

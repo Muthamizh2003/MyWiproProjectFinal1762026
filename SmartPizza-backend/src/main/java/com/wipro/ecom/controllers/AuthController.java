@@ -15,10 +15,14 @@ import com.wipro.ecom.dtos.AuthRequestDTO;
 import com.wipro.ecom.dtos.AuthResponseDTO;
 import com.wipro.ecom.securityservices.UserDetailsImp;
 import com.wipro.ecom.services.JwtService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
     @Autowired
     private AuthenticationManager authManager;
@@ -29,6 +33,8 @@ public class AuthController {
     //LOGIN API
     @PostMapping("/login")
     public AuthResponseDTO login(@Valid @RequestBody AuthRequestDTO request) {
+
+        log.info("Login attempt for user: {}", request.getUsername());
 
         //Authenticate user
         Authentication authentication = authManager.authenticate(
@@ -50,6 +56,7 @@ public class AuthController {
 
         String token = jwtService.generateToken(userDetails.getUsername(), role, userDetails.getUserId());
 
+        log.info("Login successful for user: {}", request.getUsername());
         return new AuthResponseDTO(token);
     }
 }
